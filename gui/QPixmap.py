@@ -45,20 +45,18 @@ class Example(QWidget):
         
         # QPixmapオブジェクト作成
         pixmap = QPixmap("layout_2017.jpg")
-        #pixmap2 = QPixmap("kurage.jpg")
+        self.pixmap2 = QPixmap("layout2017_number.jpg")
 
         # ラベルを作ってその中に画像を置く
-        lbl = QLabel(self)
-        lbl.setPixmap(pixmap)
+        self.lbl = QLabel(self)
+        self.lbl.setPixmap(pixmap)
 
         hbox.addWidget(button01)
         hbox.addWidget(button02)
         vbox.addLayout(hbox)
-        vbox.addWidget(lbl)
+        vbox.addWidget(self.lbl)
         
         self.setLayout(vbox)
-        #これで画像の更新できるーーーー！！
-        #lbl.setPixmap(pixmap2)
 
         #self.move(300, 200)
         self.setWindowTitle('Sample')
@@ -69,7 +67,7 @@ class Example(QWidget):
         name = "goda"
         #print(rnd)
         #print("x: " + str(self.list_x[rnd]) + ", y: " + str(self.list_y[rnd]))
-        
+        self.lbl.setPixmap(self.pixmap2)
 
     def updatingImage(self):
         print("hello")
