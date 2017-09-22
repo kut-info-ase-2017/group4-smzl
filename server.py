@@ -14,7 +14,7 @@ clientsock, client_address = serversock.accept()
 
 while True:
     rcvmsg = clientsock.recv(1024)
-    if rcvmsg != "b''":
+    if rcvmsg != b'':
     	print('Received -> %s' % (rcvmsg))
     #print('Wait...')
 
