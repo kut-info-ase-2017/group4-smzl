@@ -1,5 +1,12 @@
 # coding: utf-8
 
+import os
+FILE_PATH = os.path.dirname(__file__)
+if len(FILE_PATH) == 0:
+    FILE_PATH = ''
+else:
+    FILE_PATH += '/'
+
 import cv2
 from PIL import Image
 import numpy as np
@@ -10,12 +17,13 @@ from chainer import Variable
 
 
 import sys
-sys.path.append('./cnn/')
+sys.path.append(FILE_PATH + 'cnn')
 from net_model import AlexNet
 from net_model import VggFaceNet
 from image2TrainAndTest import image2TrainAndTest
 from image2TrainAndTest import getValueDataFromPath
 from image2TrainAndTest import getValueDataFromImg
+
 
 
 class CNN_FaceRecognizer():
@@ -28,6 +36,7 @@ class CNN_FaceRecognizer():
         '''
         # extract number of classes from model's file name
         # file name of model is 'XXX_[class num].YYY'
+        print(model)
         outNumStr = model.split(".")[0].split("_")
         outnum = int(outNumStr[ len(outNumStr)-1 ])
         self.model = L.Classifier(neural_net(outnum))
@@ -35,7 +44,7 @@ class CNN_FaceRecognizer():
 
         # get labels
         self.label2user_dict = [""] * outnum
-        for line in open("whoiswho.txt", "r"):
+        for line in open(FILE_PATH +'whoiswho.txt', 'r'):
             user = line.split(",")[0]
             label = line.split(",")[1]
             self.label2user_dict[int(label)] = user
@@ -84,7 +93,7 @@ class Eigen_FaceRecognizer():
     '''This class recognize human face and predicts identification from movie.
     '''
 
-    def __init__(self, init_model, user_dict):
+    def __init__(self, init_model, user_dict, threshold=85):
         '''
         @param cascade_path: this file is used for face detection.
         @param init_model: serialized model path which has been aleady learned.
@@ -95,6 +104,7 @@ class Eigen_FaceRecognizer():
         self.rev_user_dict = {v:k for k,v in user_dict.items()}
         self.recognizer = cv2.face.createLBPHFaceRecognizer()
         self.recognizer.load(init_model)
+        self.threshold=threshold
 
 
     def predict(self, img):
@@ -107,7 +117,7 @@ class Eigen_FaceRecognizer():
 
         print(confidence)
         user = ''
-        if confidence > 95:
+        if confidence > self.threshold:
             user = 'unknown'
         else:
             # find predicted human identification
@@ -120,7 +130,7 @@ import camera
 if __name__ == '__main__':
 
     if len(sys.argv) == 1:
-        raise Exception('引数指定してください[eigen or cnn]')
+        raise Exception('引数指定してください[eigen or alexnet or vggfacenet]')
 
     recognizer = None
     if sys.argv[1] == 'eigen':
@@ -129,7 +139,7 @@ if __name__ == '__main__':
         # データ準備
         ## トレーニング時のラベル割り当てと揃える
         user_dict = {'goda':0, 'tada':1, 'yasumitsu':2, 'unkown':3}
-        eigen_model = '/Users/hirto/Desktop/Advanced_SE/implementation/eigenface/recognizer.face'
+        eigen_model = FILE_PATH + 'model/recognizer.face'
 
         # モデル準備
         recognizer = Eigen_FaceRecognizer(eigen_model, user_dict)
@@ -138,7 +148,7 @@ if __name__ == '__main__':
         #### CNN (AlexNet) ####
 
         # データ準備
-        cnn_model = '/Users/hirto/Desktop/Advanced_SE/implementation/example/face_prediction-master/cnn_4.model'
+        cnn_model = FILE_PATH + 'model/alexnet9_4.model'
         net = AlexNet
 
         # モデル準備
@@ -147,7 +157,7 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'vggfacenet':
         #### CNN (VggFaceNet) ####
         # データ準備
-        cnn_model = '/Users/hirto/Desktop/Advanced_SE/implementation/example/oxford/finetuning_4.model'
+        cnn_model = FILE_PATH + 'model/vggfacenet33_4.model'
         net = VggFaceNet
 
         # モデル準備
