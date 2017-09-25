@@ -48,7 +48,6 @@ class Camera():
                     if not top < 0 and left < 0 and bottom > height and right > width:
                         break
                     img = frame[top:bottom, left:right]
-                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
                     img = cv2.resize(img, (120, 120), interpolation=cv2.INTER_AREA)
                     face_list.append(img)
 
