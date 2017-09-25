@@ -11,6 +11,13 @@ from image2TrainAndTest import image2TrainAndTest
 from image2TrainAndTest import getValueDataFromPath
 from image2TrainAndTest import getValueDataFromImg
 
+import os
+FILE_PATH = os.path.dirname(__file__)
+if len(FILE_PATH) == 0:
+    FILE_PATH = ''
+else:
+    FILE_PATH += '/'
+
 def main(method='alexnet'):
     recognizer = None
     if method == 'eigen':
@@ -19,7 +26,7 @@ def main(method='alexnet'):
         # データ準備
         ## トレーニング時のラベル割り当てと揃える
         user_dict = {'goda':0, 'tada':1, 'yasumitsu':2, 'unkown':3}
-        eigen_model = '/Users/hirto/Desktop/Advanced_SE/implementation/eigenface/recognizer.face'
+        eigen_model = FILE_PATH + 'face_recognition/model/recognizer.face'
 
         # モデル準備
         recognizer = face_recognize.Eigen_FaceRecognizer(eigen_model, user_dict, threshold=90)
@@ -28,7 +35,7 @@ def main(method='alexnet'):
         #### CNN (AlexNet) ####
 
         # データ準備
-        cnn_model = '/Users/hirto/Desktop/Advanced_SE/implementation/example/face_prediction-master/cnn_4.model'
+        cnn_model = FILE_PATH + 'face_recognition/model/alexnet9_4.model'
         net = AlexNet
 
         # モデル準備
@@ -37,7 +44,7 @@ def main(method='alexnet'):
     elif method == 'vggfacenet':
         #### CNN (VggFaceNet) ####
         # データ準備
-        cnn_model = '/Users/hirto/Desktop/Advanced_SE/implementation/example/oxford/finetuning33_4.model'
+        cnn_model = FILE_PATH + 'face_recognition/model/vggfacenet33_4.model'
         net = VggFaceNet
 
         # モデル準備
