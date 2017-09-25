@@ -25,7 +25,7 @@ from image2TrainAndTest import getValueDataFromImg
 
 import os
 
-SEAT_FILE_NAME = 'current_seat.txt'
+SEAT_FILE_NAME = './gui/current_seat.txt'
 data_q = Queue()
 
 FILE_PATH = os.path.dirname(__file__)
@@ -48,7 +48,7 @@ class SeatGUI(QWidget):
         random.shuffle(self.namelist)
         self.text = "ここにテキストを入力"
         # QPixmapオブジェクト作成
-        self.pixmap = QPixmap("layout_2017.jpg")
+        self.pixmap = QPixmap("./gui/layout_2017.jpg")
         self.initUI()
         
         #プロセスの作成と開始
