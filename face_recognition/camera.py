@@ -61,9 +61,9 @@ class Camera():
                 face_list = face_list[0]
 
             return face_list
-    except Exception as e:
-        print(e)
-        return None
+        except Exception as e:
+            print(e)
+            return None
 
     def close(self):
         self.cap.release()
