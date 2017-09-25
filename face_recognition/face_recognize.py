@@ -36,7 +36,6 @@ class CNN_FaceRecognizer():
         '''
         # extract number of classes from model's file name
         # file name of model is 'XXX_[class num].YYY'
-        print(model)
         outNumStr = model.split(".")[0].split("_")
         outnum = int(outNumStr[ len(outNumStr)-1 ])
         self.model = L.Classifier(neural_net(outnum))
