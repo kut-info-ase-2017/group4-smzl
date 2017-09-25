@@ -3,7 +3,9 @@
 
 
 import sys
+import signal
 import threading
+from multiprocessing import Process
 from queue import Queue
 import time
 import random
@@ -23,7 +25,7 @@ from image2TrainAndTest import getValueDataFromImg
 
 import os
 
-SEAT_FILE_NAME = './gui/current_seat.txt'
+SEAT_FILE_NAME = 'current_seat.txt'
 data_q = Queue()
 
 FILE_PATH = os.path.dirname(__file__)
@@ -32,7 +34,7 @@ if len(FILE_PATH) == 0:
 else:
     FILE_PATH += '/'
 
-class SeatGUI(QWidget, threading.Thread):
+class SeatGUI(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -46,9 +48,16 @@ class SeatGUI(QWidget, threading.Thread):
         random.shuffle(self.namelist)
         self.text = "ここにテキストを入力"
         # QPixmapオブジェクト作成
-        self.pixmap = QPixmap('./gui/layout_2017.jpg')
-        #self.win = QMainWindow()
+        self.pixmap = QPixmap("layout_2017.jpg")
         self.initUI()
+        
+        #プロセスの作成と開始
+        self.process = Process(target=self.target)
+        self.process.start()
+        
+        self.msoc = MySocket(self)
+        #self.msoc.start()
+        signal.signal(signal.SIGINT, self.msoc.stop)
 
     def initUI(self):
         # ファイルの読み込み
@@ -64,7 +73,7 @@ class SeatGUI(QWidget, threading.Thread):
         # ファイルの読み込み終了
        
         # ボタン作成
-        button01 = QPushButton("Start", self)
+        button01 = QPushButton("Exit", self)
         #button01.setToolTip('Push!!')
         button01.clicked.connect(self.button01Clicked)
         button02 = QPushButton("Undo", self)
@@ -91,14 +100,16 @@ class SeatGUI(QWidget, threading.Thread):
         self.setWindowTitle('Sample')
         self.show()
 
-    # スタートボタンの設定
+    # 閉じるボタンの設定
     def button01Clicked(self):
-        self.setUI()
+        #self.setUI()
+        #self.msoc.stop()
+        sys.exit()
 
     # 一つ前に戻るボタンの設定
     def button02Clicked(self):
         reply = QMessageBox.question(self, 'Message',
-            "Are you sure you want to undo?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            "やり直しますか？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         # Yesが押されたときの処理
         if reply == QMessageBox.Yes:
             qp = QPainter()        
@@ -106,6 +117,7 @@ class SeatGUI(QWidget, threading.Thread):
             self.drawRectangles(qp)
             qp.end()
             self.lbl.setPixmap(self.pixmap)
+            
         else:
             pass
         
@@ -113,7 +125,7 @@ class SeatGUI(QWidget, threading.Thread):
     # リセットボタンの設定
     def button03Clicked(self):
         reply = QMessageBox.question(self, 'Message',
-            "Are you sure you want to reset?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            "リセットしていいんですね？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         # Yesが押されたときの処理
         if reply == QMessageBox.Yes:
             self.pixmap = QPixmap("layout_2017.jpg")
@@ -121,13 +133,11 @@ class SeatGUI(QWidget, threading.Thread):
             self.index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
             random.shuffle(self.index)
             self.save = []
+            self.namelist = []
         else:
             pass
 
-    def setUI(self):
-        # 静的に座席決定
-        #rnd = random.randint(0,3)
-        #self.text = self.namelist[rnd]
+    def setUI(self):        
         # 動的に座席決定
         global data_q
         self.text = data_q.get()
@@ -143,14 +153,17 @@ class SeatGUI(QWidget, threading.Thread):
             self.drawText(qp)
             qp.end()
             self.lbl.setPixmap(self.pixmap)
-            self.namelist.append(self.text)
-        
+            
+
+            
     def drawText(self, qp):
         try:
             #座席を取得
             num = self.index[0]
             self.save.append(num)
             del self.index[0]
+            self.namelist.append(self.text)
+
             # 文字の色指定 QColor(R, G, B)
             qp.setPen(QColor(0, 0, 0))
             # フォントと文字の大きさを指定
@@ -159,7 +172,7 @@ class SeatGUI(QWidget, threading.Thread):
             # 第三引数は挿入するテキスト
             qp.drawText(int(self.list_x[num-1]), int(self.list_y[num-1]), self.text)
         except:
-            reply = QMessageBox.warning(self, 'Message',"おめぇの席ねぇから！", QMessageBox.Ok)
+            reply = QMessageBox.warning(self, 'Message',"席が空いていません！", QMessageBox.Ok)
 
     def drawRectangles(self, qp):
         try:
@@ -168,6 +181,7 @@ class SeatGUI(QWidget, threading.Thread):
             self.index.append(num)
             random.shuffle(self.index)
             del self.save[-1]
+            del self.namelist[-1]
             
             # Qcolor(Red, Green, Blue, Alpha) Alphaは透明度
             col = QColor(255, 255, 255)
@@ -181,16 +195,34 @@ class SeatGUI(QWidget, threading.Thread):
         except:
             reply = QMessageBox.warning(self, 'Message',"戻れません", QMessageBox.Ok)
 
-    #マルチスレッドで行う処理
-    def run(self):
+    def target(self):
         self.show()
 
-class MySocket(threading.Thread):
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Message',
+            "Are you sure to quit?", QMessageBox.Yes | 
+            QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.msoc.stop()
+            event.accept()
+        else:
+            event.ignore() 
+        
+
+class MySocket():
     def __init__(self, seat):
         threading.Thread.__init__(self)
         self.cam = camera.Camera()
         # 座席表示用の名前辞書
         self.index = {'goda': '合田', 'tada':'多田', 'yasumitsu':'安光', 'unknown':'unknown'}
+        self.stop_event = threading.Event() #停止させるかのフラグ
+        self.thread = threading.Thread(target=self.target)
+        self.thread.daemon = True
+        self.thread.start()
+        #self.process = Process(target=self.target)
+        #self.process.start()
+        
 
     def main(self, method='alexnet'):
         recognizer = None
@@ -234,7 +266,7 @@ class MySocket(threading.Thread):
             user = recognizer.predict(face)
         return user
 
-    def run(self):
+    def target(self):
         host = "172.21.32.85" #server ip
         port = 8080 #port  same client
         
@@ -245,8 +277,9 @@ class MySocket(threading.Thread):
         
         print('Waiting for connections...')
         clientsock, client_address = serversock.accept()
-    
-        while True:
+
+        
+        while not self.stop_event.is_set():
             rcvmsg = clientsock.recv(1024)
             if rcvmsg == b'detect':
                 print('Received -> %s' % (rcvmsg))
@@ -258,18 +291,19 @@ class MySocket(threading.Thread):
                     seat.setUI()
                 else:
                     print("判別できませんでした")
-                    
+                self.stop_event.wait(timeout=3)
+
         clientsock.close()
         self.cam.close()
+
+    def stop(self):
+        self.stop_event.set()
+        
         
             
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     seat = SeatGUI()
-    seat.start()
-    #seat.join()
-    msoc = MySocket(seat)
-    msoc.start()
         
     sys.exit(app.exec_())
