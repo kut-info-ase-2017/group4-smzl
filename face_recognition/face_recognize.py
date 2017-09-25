@@ -70,9 +70,9 @@ class CNN_FaceRecognizer():
         user = self.label2user_dict[idx]
 
         print('probability of {} is {:.2f}'.format(user, prob))
-        # 認識確率 0.9未満は unkownとする
+        # 認識確率 0.9未満は unknownとする
         if prob < 0.9:
-            user = 'unkown'
+            user = 'unknown'
         return user
 
     def _cv2pil_converter(self, cv_img):
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
         # データ準備
         ## トレーニング時のラベル割り当てと揃える
-        user_dict = {'goda':0, 'tada':1, 'yasumitsu':2, 'unkown':3}
+        user_dict = {'goda':0, 'tada':1, 'yasumitsu':2, 'unknown':3}
         eigen_model = FILE_PATH + 'model/recognizer.face'
 
         # モデル準備
