@@ -1,0 +1,21 @@
+@startuml
+
+!define Target 来訪者
+
+participant "MotionSensor" as Sensor
+participant "RaspberryPi" as RasPi
+participant "結果表示用PC" as PC
+participant "CammeraSensor" as Cammera
+participant "FelicaReader" as Felica
+participant "Target" as Human
+
+Sensor  -> RasPi    : 接近・離脱を検知する
+RasPi   -> PC       : Socket使います
+RasPi   <- PC       : 受け入れます
+RasPi   -> PC       : 画像送信
+PC      -> Human    : あなたは〜ですか
+Human   -> Zaseki   : 席に移動
+RasPi   -> Felica   : Felicaを読み取り
+RasPi   <- Felica   : あなたは〜ですね
+
+@enduml
