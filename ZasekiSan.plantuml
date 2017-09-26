@@ -9,7 +9,6 @@ participant "CammeraSensor" as Cammera
 participant "FelicaReader" as Felica
 participant "Target" as Human
 
-Sensor  <-- RasPi   : 電源供給
 Sensor  -> RasPi    : 接近・離脱を検知する
 RasPi   -> PC       : Socket使います
 RasPi   <- PC       : 受け入れます
