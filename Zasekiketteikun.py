@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-
 import sys
 import signal
 import threading
@@ -10,7 +9,7 @@ from queue import Queue
 import time
 import random
 import socket
-from PyQt5.QtWidgets import QWidget, QMainWindow, QAction, QHBoxLayout, QVBoxLayout, QLabel, QApplication, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QWidget,  QHBoxLayout, QVBoxLayout, QLabel, QApplication, QPushButton, QMessageBox
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QFont
 
 sys.path.append('./face_recognition')
@@ -34,21 +33,23 @@ if len(FILE_PATH) == 0:
 else:
     FILE_PATH += '/'
 
+# UIの処理
 class SeatGUI(QWidget):
 
     def __init__(self):
         super().__init__()
+        # 変数の定義
         self.list_x = []
         self.list_y = []
         self.index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
         random.shuffle(self.index)
         self.save = []
-        #self.namelist = ["合田", "多田", "藤田", "安光"]
         self.namelist = []
-        random.shuffle(self.namelist)
         self.text = "ここにテキストを入力"
+        
         # QPixmapオブジェクト作成
         self.pixmap = QPixmap("./gui/layout_2017.jpg")
+        
         self.initUI()
         
         #プロセスの作成と開始
@@ -56,7 +57,6 @@ class SeatGUI(QWidget):
         self.process.start()
         
         self.msoc = MySocket(self)
-        #self.msoc.start()
         signal.signal(signal.SIGINT, self.msoc.stop)
 
     def initUI(self):
@@ -74,7 +74,6 @@ class SeatGUI(QWidget):
        
         # ボタン作成
         button01 = QPushButton("Exit", self)
-        #button01.setToolTip('Push!!')
         button01.clicked.connect(self.button01Clicked)
         button02 = QPushButton("Undo", self)
         button02.clicked.connect(self.button02Clicked)
@@ -102,9 +101,15 @@ class SeatGUI(QWidget):
 
     # 閉じるボタンの設定
     def button01Clicked(self):
-        #self.setUI()
-        #self.msoc.stop()
-        sys.exit()
+        reply = QMessageBox.question(self, 'Message',
+            "Are you sure to quit?", QMessageBox.Yes | 
+            QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.msoc.stop()
+            sys.exit()
+        else:
+            pass
 
     # 一つ前に戻るボタンの設定
     def button02Clicked(self):
@@ -116,12 +121,10 @@ class SeatGUI(QWidget):
             qp.begin(self.pixmap)
             self.drawRectangles(qp)
             qp.end()
-            self.lbl.setPixmap(self.pixmap)
-            
+            self.lbl.setPixmap(self.pixmap)            
         else:
             pass
         
-
     # リセットボタンの設定
     def button03Clicked(self):
         reply = QMessageBox.question(self, 'Message',
@@ -153,23 +156,20 @@ class SeatGUI(QWidget):
             self.drawText(qp)
             qp.end()
             self.lbl.setPixmap(self.pixmap)
-            
-
-            
+            self.namelist.append(self.text)
+                        
     def drawText(self, qp):
         try:
             #座席を取得
             num = self.index[0]
             self.save.append(num)
             del self.index[0]
-            self.namelist.append(self.text)
-
+            
             # 文字の色指定 QColor(R, G, B)
             qp.setPen(QColor(0, 0, 0))
             # フォントと文字の大きさを指定
             qp.setFont(QFont('Fantasy', 15))
-            # 第一引数はx座標, 第二引数はy座標
-            # 第三引数は挿入するテキスト
+            # 第一引数はx座標, 第二引数はy座標, 第三引数は挿入するテキスト
             qp.drawText(int(self.list_x[num-1]), int(self.list_y[num-1]), self.text)
         except:
             reply = QMessageBox.warning(self, 'Message',"席が空いていません！", QMessageBox.Ok)
@@ -209,7 +209,7 @@ class SeatGUI(QWidget):
         else:
             event.ignore() 
         
-
+# 顔認識とソケット通信の処理
 class MySocket():
     def __init__(self, seat):
         threading.Thread.__init__(self)
@@ -220,10 +220,8 @@ class MySocket():
         self.thread = threading.Thread(target=self.target)
         self.thread.daemon = True
         self.thread.start()
-        #self.process = Process(target=self.target)
-        #self.process.start()
-        
 
+    # 顔認識の処理
     def main(self, method='alexnet'):
         recognizer = None
         if method == 'eigen':
@@ -266,6 +264,7 @@ class MySocket():
             user = recognizer.predict(face)
         return user
 
+    # スレッドで行うソケット通信の処理
     def target(self):
         host = "172.21.32.85" #server ip
         port = 8080 #port  same client
@@ -278,28 +277,34 @@ class MySocket():
         print('Waiting for connections...')
         clientsock, client_address = serversock.accept()
 
-        
+        global data_q
+        # イベントを受け取るまで無限ループ
         while not self.stop_event.is_set():
             rcvmsg = clientsock.recv(1024)
+            # RaspberryPiから顔検知のメッセージを受け取った場合
             if rcvmsg == b'detect':
                 print('Received -> %s' % (rcvmsg))
                 userId = self.main()
                 if userId is not None and self.index[userId] != 'unknown':
                     print(self.index[userId])
-                    global data_q
                     data_q.put(self.index[userId])
                     seat.setUI()
                 else:
                     print("判別できませんでした")
                 self.stop_event.wait(timeout=3)
+                
+            # FeliCaから名前を直接受け取った場合
+            elif rcvmsg in self.index:
+                userId = rcvmsg.decode('utf-8')
+                print(self.index[userId])
+                data_q.put(self.index[userId])
+                seat.setUI()
 
         clientsock.close()
         self.cam.close()
 
     def stop(self):
-        self.stop_event.set()
-        
-        
+        self.stop_event.set()               
             
 if __name__ == '__main__':
 
