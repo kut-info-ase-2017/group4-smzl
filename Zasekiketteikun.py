@@ -102,7 +102,7 @@ class SeatGUI(QWidget):
     # 閉じるボタンの設定
     def button01Clicked(self):
         reply = QMessageBox.question(self, 'Message',
-            "Are you sure to quit?", QMessageBox.Yes | 
+            "アプリケーションを終了しますか?", QMessageBox.Yes | 
             QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
